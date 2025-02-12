@@ -166,7 +166,7 @@ export const handleUpdate = async (req: Request, res: Response) => {
         if (messageText.includes('payment_success')) {
           try {
             // Extract transaction hash from the start parameter
-            const txHash = messageText.split('txhash=')[1];
+            const txHash = messageText.split('payment_success_')[1];
             
             if (!txHash) {
               await sendMessage({
@@ -204,7 +204,7 @@ export const handleUpdate = async (req: Request, res: Response) => {
             // Send the invite link to the user
             await sendMessage({
               chat_id: chatId,
-              text: `🎉 Payment Verified Successfully!\n\nHere's your exclusive invite link to join our VIP channel!\n\nThis link will only work for you and can only be used once. NOTE: You must join the channel within 24 hours of receiving this link.\n\n${inviteLink}`,
+              text: `🎉 Payment Verified Successfully!\n\nHere's your exclusive invite link to join our VIP channel!\n\nThis link will only work for you and can only be used once. NOTE: You must join the channel within 1 hour of receiving this link.\n\n${inviteLink}`,
             });
 
             // Set up an interval to check if user has joined
@@ -226,7 +226,7 @@ export const handleUpdate = async (req: Request, res: Response) => {
               }
             }, 10000);
 
-            // Clear interval after 24 hours if user hasn't joined
+            // Clear interval after 1 hour if user hasn't joined
             setTimeout(async () => {
               clearInterval(checkInterval);
               try {
@@ -238,7 +238,7 @@ export const handleUpdate = async (req: Request, res: Response) => {
               } catch (error) {
                 console.error('Error handling expired invite:', error);
               }
-            }, 86400000); // 24 hours
+            }, 3600000); // 1 hour
 
             return res.sendStatus(200);
           } catch (error) {

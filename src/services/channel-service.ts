@@ -1,7 +1,5 @@
 import fetch from 'node-fetch';
-import { TELEGRAM_API_URL } from '../config/constants';
-
-const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '@your_channel';  // Replace with your channel ID
+import { TELEGRAM_API_URL, TELEGRAM_CHANNEL_ID } from '../config/constants';
 
 interface InviteLink {
   invite_link: string;
@@ -21,7 +19,7 @@ export const createInviteLink = async (userId: number): Promise<string> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: CHANNEL_ID,
+        chat_id: TELEGRAM_CHANNEL_ID,
         name: `user_${userId}`,  // To identify which user this link was created for
         creates_join_request: false,
         member_limit: 1  // Only one person can use this link
@@ -48,7 +46,7 @@ export const revokeInviteLink = async (inviteLink: string): Promise<void> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: CHANNEL_ID,
+        chat_id: TELEGRAM_CHANNEL_ID,
         invite_link: inviteLink,
       }),
     });
@@ -70,7 +68,7 @@ export const checkUserInChannel = async (userId: number): Promise<boolean> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: CHANNEL_ID,
+        chat_id: TELEGRAM_CHANNEL_ID,
         user_id: userId,
       }),
     });
