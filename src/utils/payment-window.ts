@@ -17,11 +17,21 @@ const isLeapYear = (year: number): boolean => {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
 };
 
+const getNextMonth = (openMonth: number, currentYear: number): number => {
+  // Special handling for February
+
+  if (openMonth === 2) { // February is month 1 (0-based)
+    return 2;
+  }
+  // For all other months, increment normally
+  return (openMonth + 1) % 12;
+};
+
 const getNextWindowDate = (currentDate: Date): Date => {
   const currentDay = currentDate.getDate();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  
+
   // If we're before the 29th of current month (except February)
   if (currentMonth !== 1 && currentDay < 29) {
     return new Date(currentYear, currentMonth, 29);
@@ -35,13 +45,15 @@ const getNextWindowDate = (currentDate: Date): Date => {
       return new Date(currentYear, 2, 1); // March 1st
     }
   }
+
+  // console.log("current Month", currentMonth);
   
   // If we're past the 29th or in days 1-5 of next month
-  const nextMonth = (currentMonth + 1) % 12;
+  const nextMonth = getNextMonth(currentMonth, currentYear);
   const nextYear = nextMonth === 0 ? currentYear + 1 : currentYear;
   
   // If next window would be in February
-  if (nextMonth === 1) {
+  if (nextMonth === 2) {
     return isLeapYear(nextYear) 
       ? new Date(nextYear, 1, 29)  // February 29th
       : new Date(nextYear, 2, 1);  // March 1st
@@ -58,6 +70,7 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
   const currentYear = today.getFullYear();
   const isCurrentYearLeap = isLeapYear(currentYear);
 
+  
   // Determine if window is open
   const isOpen = 
     (currentMonth === 1 && isCurrentYearLeap && currentDay === 29) || // Feb 29 in leap year
@@ -80,16 +93,10 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
   
   const daysUntilOpen = Math.ceil((nextDateMidnight - todayMidnight) / msPerDay);
 
-  console.log('Today:', today.toISOString());
-  console.log('Next window:', nextOpenDate.toISOString());
-  console.log('Today midnight:', new Date(todayMidnight).toISOString());
-  console.log('Next midnight:', new Date(nextDateMidnight).toISOString());
-  console.log('Days until:', daysUntilOpen);
-
   // Format the response
   const opensDay = nextOpenDate.getDate();
   const opensMonth = nextOpenDate.getMonth();
-  const closesMonth = (opensMonth + 1) % 12;
+  const closesMonth = getNextMonth(opensMonth, currentYear);
   const dayString = opensDay === 1 ? '1st' : `${opensDay}th`;
 
   return {
