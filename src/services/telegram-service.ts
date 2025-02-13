@@ -30,7 +30,7 @@ export const sendMessage = async (options: SendMessageOptions): Promise<void> =>
     }
 
     const data = await response.json();
-    console.log('Message sent successfully:', data);
+    // console.log('Message sent successfully:', data);
   } catch (error) {
     console.error('Error sending message:', error);
     throw error;
