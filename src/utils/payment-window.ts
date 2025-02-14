@@ -17,50 +17,45 @@ const isLeapYear = (year: number): boolean => {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
 };
 
-const getNextMonth = (openMonth: number, currentYear: number): number => {
-  // Special handling for February
-
-  if (openMonth === 2) { // February is month 1 (0-based)
-    return 2;
-  }
-  // For all other months, increment normally
-  return (openMonth + 1) % 12;
+const getNextMonth = (currentMonth: number): number => {
+  return (currentMonth + 1) % 12;
 };
 
-const getNextWindowDate = (currentDate: Date): Date => {
+const FEBRUARY = 1; // 0-based month indexing
+
+export const getNextWindowDate = (currentDate: Date): Date => {
   const currentDay = currentDate.getDate();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  // If we're before the 29th of current month (except February)
-  if (currentMonth !== 1 && currentDay < 29) {
-    return new Date(currentYear, currentMonth, 29);
-  }
-  
   // If we're in February
-  if (currentMonth === 1) {
-    if (isLeapYear(currentYear) && currentDay < 29) {
-      return new Date(currentYear, 1, 29); // February 29th
-    } else {
-      return new Date(currentYear, 2, 1); // March 1st
+  if (currentMonth === FEBRUARY) {
+    const lastFebDay = isLeapYear(currentYear) ? 29 : 28;
+    // If we're before the last day of February
+    if (currentDay < lastFebDay) {
+      return new Date(currentYear, FEBRUARY, lastFebDay);
     }
+    // If we're on or after the last day of February
+    return new Date(currentYear, FEBRUARY + 1, 30);
   }
 
-  // console.log("current Month", currentMonth);
-  
-  // If we're past the 29th or in days 1-5 of next month
-  const nextMonth = getNextMonth(currentMonth, currentYear);
-  const nextYear = nextMonth === 0 ? currentYear + 1 : currentYear;
-  
-  // If next window would be in February
-  if (nextMonth === 2) {
-    return isLeapYear(nextYear) 
-      ? new Date(nextYear, 1, 29)  // February 29th
-      : new Date(nextYear, 2, 1);  // March 1st
+  // If we're before the 30th of current month
+  if (currentDay < 30) {
+    return new Date(currentYear, currentMonth, 30);
   }
   
-  // Regular case: 29th of next month
-  return new Date(nextYear, nextMonth, 29);
+  // If we're at or after the 30th, get next month's date
+  const nextMonth = getNextMonth(currentMonth);
+  const nextYear = nextMonth === 0 ? currentYear + 1 : currentYear;
+  
+  // If next month is February
+  if (nextMonth === FEBRUARY) {
+    return isLeapYear(nextYear) 
+      ? new Date(nextYear, FEBRUARY, 29)
+      : new Date(nextYear, FEBRUARY, 28);
+  }
+  
+  return new Date(nextYear, nextMonth, 30);
 };
 
 export const getPaymentWindowStatus = (): PaymentWindow => {
@@ -68,20 +63,25 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
   const currentDay = today.getDate();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
-  const isCurrentYearLeap = isLeapYear(currentYear);
 
-  
+  // Get next window date for comparison
+  const nextOpenDate = getNextWindowDate(today);
+
   // Determine if window is open
   const isOpen = 
-    (currentMonth === 1 && isCurrentYearLeap && currentDay === 29) || // Feb 29 in leap year
-    (currentMonth === 2 && currentDay <= 5) || // March 1-5
-    (currentMonth !== 1 && currentMonth !== 2 && ( // Other months
-      currentDay >= 29 || (currentDay <= 5 && currentMonth === ((today.getMonth() - 1 + 12) % 12 + 1))
+    // February special cases
+    (currentMonth === FEBRUARY && (
+      (isLeapYear(currentYear) && currentDay === 29) || 
+      (!isLeapYear(currentYear) && currentDay === 28)
+    )) ||
+    // Regular months
+    (currentMonth !== FEBRUARY && (
+      // Open on 30th
+      currentDay === 30 ||
+      // Or first 5 days of next month
+      (currentDay <= 5 && currentMonth === getNextMonth((nextOpenDate.getMonth() + 11) % 12))
     ));
 
-  // Get next window date
-  const nextOpenDate = getNextWindowDate(today);
-  
   // Calculate days until next window
   const msPerDay = 1000 * 60 * 60 * 24;
   const todayMidnight = new Date(currentYear, currentMonth, currentDay).getTime();
@@ -91,12 +91,13 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
     nextOpenDate.getDate()
   ).getTime();
   
-  const daysUntilOpen = Math.ceil((nextDateMidnight - todayMidnight) / msPerDay);
+  const rawDaysUntilOpen = Math.ceil((nextDateMidnight - todayMidnight) / msPerDay);
+  const daysUntilOpen = isOpen ? 0 : Math.max(0, rawDaysUntilOpen);
 
   // Format the response
   const opensDay = nextOpenDate.getDate();
   const opensMonth = nextOpenDate.getMonth();
-  const closesMonth = getNextMonth(opensMonth, currentYear);
+  const closesMonth = getNextMonth(opensMonth);
   const dayString = opensDay === 1 ? '1st' : `${opensDay}th`;
 
   return {
