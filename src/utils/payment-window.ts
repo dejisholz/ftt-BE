@@ -78,8 +78,8 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
     (currentMonth !== FEBRUARY && (
       // Open on 30th
       currentDay === 30 ||
-      // Or first 5 days of next month
-      (currentDay <= 5 && currentMonth === getNextMonth((nextOpenDate.getMonth() + 11) % 12))
+      // Or first 3 days of next month
+      (currentDay <= 3 && currentMonth === getNextMonth((nextOpenDate.getMonth() + 11) % 12))
     ));
 
   // Calculate days until next window
@@ -103,7 +103,7 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
   return {
     isOpen,
     opensOn: `🔵 ${dayString} of ${getMonthName(opensMonth)}`,
-    closesOn: `🔴 5th of ${getMonthName(closesMonth)}`,
+    closesOn: `🔴 3rd of ${getMonthName(closesMonth)}`,
     daysUntilOpen
   };
 }; 
