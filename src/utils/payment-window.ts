@@ -5,6 +5,13 @@ interface PaymentWindow {
   daysUntilOpen: number;
 }
 
+// Helper function to get WAT date
+const getWATDate = (date: Date = new Date()): Date => {
+  // WAT is UTC+1
+  const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+  return new Date(utcDate.getTime() + (60 * 60 * 1000)); // Add 1 hour for WAT
+};
+
 const getMonthName = (monthIndex: number): string => {
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -24,9 +31,10 @@ const getNextMonth = (currentMonth: number): number => {
 const FEBRUARY = 1; // 0-based month indexing
 
 export const getNextWindowDate = (currentDate: Date): Date => {
-  const currentDay = currentDate.getDate();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
+  const watDate = getWATDate(currentDate);
+  const currentDay = watDate.getDate();
+  const currentMonth = watDate.getMonth();
+  const currentYear = watDate.getFullYear();
 
   // If we're in February
   if (currentMonth === FEBRUARY) {
@@ -59,13 +67,13 @@ export const getNextWindowDate = (currentDate: Date): Date => {
 };
 
 export const getPaymentWindowStatus = (): PaymentWindow => {
-  const today = new Date();
-  const currentDay = today.getDate();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
+  const watDate = getWATDate();
+  const currentDay = watDate.getDate();
+  const currentMonth = watDate.getMonth();
+  const currentYear = watDate.getFullYear();
 
   // Get next window date for comparison
-  const nextOpenDate = getNextWindowDate(today);
+  const nextOpenDate = getNextWindowDate(watDate);
 
   // Determine if window is open
   const isOpen = 

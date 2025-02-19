@@ -2,6 +2,7 @@ import express from 'express';
 import { handleUpdate } from './controllers/telegram-controller';
 import { TELEGRAM_BOT_TOKEN, WEBHOOK_BASE_URL } from './config/constants';
 import { setupWebhook } from './utils/webhook-setup';
+import { initializeCronJobs } from './services/cron-service';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -24,6 +25,10 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+
+    if (process.env.NODE_ENV === 'production') {
+      initializeCronJobs();
+    }
 
     // Setup webhook after server starts
     await setupWebhook(WEBHOOK_BASE_URL);
