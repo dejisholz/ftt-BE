@@ -4,10 +4,10 @@ dotenv.config();
 
 export const TELEGRAM_BOT_TOKEN = '8121781737:AAGy9kv8kvFjwF1TpODH2lthNcVom6M_EZI'; // Replace with your bot token
 export const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-export const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'https://fttbe.onrender.com'; // Replace with your domain 
+export const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'https://freetradetutor-backend.onrender.com'; // Replace with your domain 
 export const BOT_LINK = process.env.BOT_LINK || 'https://t.me/BTradingVIP_Bot';
 export const FRONTEND_PAYMENT_URL = process.env.FRONTEND_PAYMENT_URL || 'https://www.freetradetutor.com';
-export const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || -2400975853;
+export const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || -1002400975853;
 
 // Tron Network Configuration
 export const TRON_FULL_NODE = process.env.TRON_FULL_NODE || 'https://api.trongrid.io';
