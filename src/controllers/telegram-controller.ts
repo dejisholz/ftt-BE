@@ -252,8 +252,10 @@ export const handleUpdate = async (req: Request, res: Response) => {
         }
 
         const paymentWindow = getPaymentWindowStatus();
+
+        const isOpened = true;
         
-        if (paymentWindow.isOpen) {
+        if (paymentWindow.isOpen || isOpened) {
           // Message for open payment window
           const welcomeMessageOpenWindow = `Hello ${username}!\n\nWelcome to FreeTradeTutor Premium membership bot.\n\n✅ Exclusive Content\n✅ Direct Support\n✅ Early Updates\n✅ Community Access\n\nYour Trade Tutor ID: ${userTelegramId}\n\nClick on the link below to complete your registration 👇`;
 
