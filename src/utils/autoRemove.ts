@@ -128,6 +128,19 @@ async function kickUser(
   }
 }
 
+/**
+ * Checks if today's date matches the specified month and year
+ * @param targetMonth - Month to check (0-11, where 0 is January)
+ * @param targetYear - Year to check
+ * @returns True if today's date is in the specified month and year
+ */
+export function isCurrentMonthAndYear(targetMonth: number, targetYear: number): boolean {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  return currentMonth === targetMonth && currentYear === targetYear;
+}
 
 /**
  * Removes all users from the channel who are not creators or administrators
@@ -136,6 +149,11 @@ export async function removeNonAdminUsers(
     botToken: string = bot_token,
     channelId: string = channelID
   ): Promise<void> {
+
+    if (isCurrentMonthAndYear(2, 2025)) {
+      return;
+    }
+
     try {
       const members = await getChannelMembersStatus(botToken, channelId);
       
