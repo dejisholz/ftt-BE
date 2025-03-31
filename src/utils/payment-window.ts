@@ -1,4 +1,4 @@
-interface PaymentWindow {
+export interface PaymentWindow {
   isOpen: boolean;
   opensOn: string;
   closesOn: string;
@@ -102,17 +102,26 @@ export const getNextWindowDate = (currentDate: Date): Date => {
     // If before 30th, next window is 30th of current month
     return new Date(Date.UTC(currentYear, currentMonth, 30));
   } else {
-    // On or after 30th, next window is in the next month
-    const nextMonthIndex = getNextMonth(currentMonth);
+    // On or after 30th (day 30 or 31), next window is in the next month
+    const nextMonthIndex = getNextMonth(currentMonth); // Will be 0 (Jan) if currentMonth is 11 (Dec)
     const nextYear = nextMonthIndex === 0 ? currentYear + 1 : currentYear;
 
-    if (nextMonthIndex === FEBRUARY) {
-      // Next month is Feb
+    // Special Handling for December -> January/February transition
+    if (currentMonth === 11) {
+      // If current month is December
+      // Next window depends on whether next year's February is leap
+      return isLeapYear(nextYear)
+        ? new Date(Date.UTC(nextYear, FEBRUARY, 29)) // Leap year -> Feb 29
+        : new Date(Date.UTC(nextYear, MARCH, 1)); // Non-leap year -> Mar 1
+    }
+    // Handling for other months' end -> next month start
+    // Check if the *next* month is February (handles Jan 30/31 -> Feb 29/Mar 1)
+    else if (nextMonthIndex === FEBRUARY) {
       return isLeapYear(nextYear)
         ? new Date(Date.UTC(nextYear, FEBRUARY, 29))
-        : new Date(Date.UTC(nextYear, MARCH, 1)); // Non-leap Feb opens Mar 1
+        : new Date(Date.UTC(nextYear, MARCH, 1));
     } else {
-      // Next month is not Feb
+      // Next month is not February (and current wasn't December), so it opens on the 30th
       return new Date(Date.UTC(nextYear, nextMonthIndex, 30));
     }
   }
@@ -145,22 +154,21 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
       : new Date(Date.UTC(todayYear, MARCH, 1));
   }
   // Case 3: Any other month - Open on 30th
-  else if (todayMonth !== FEBRUARY && todayMonth !== MARCH && todayDay === 30) {
+  else if (todayMonth !== FEBRUARY && todayDay === 30) {
     isOpen = true;
     effectiveOpenDate = new Date(Date.UTC(todayYear, todayMonth, 30));
   }
   // Case 4: Any other month - Open on 1st-3rd (following a 30th opening)
-  else if (
-    todayMonth !== FEBRUARY &&
-    todayMonth !== MARCH &&
-    todayDay >= 1 &&
-    todayDay <= 3
-  ) {
-    isOpen = true;
-    // Window opened on 30th of the *previous* month
-    const prevMonthIndex = getPreviousMonth(todayMonth);
-    const prevYear = prevMonthIndex === 11 ? todayYear - 1 : todayYear; // Handle year change Dec->Jan
-    effectiveOpenDate = new Date(Date.UTC(prevYear, prevMonthIndex, 30));
+  else if (todayMonth !== FEBRUARY && todayDay >= 1 && todayDay <= 3) {
+    // Special check: If it's March 1-3, Case 2 already handled it.
+    // This case now correctly handles Apr 1-3, May 1-3 etc.
+    if (todayMonth !== MARCH) {
+      isOpen = true;
+      // Window opened on 30th of the *previous* month
+      const prevMonthIndex = getPreviousMonth(todayMonth);
+      const prevYear = prevMonthIndex === 11 ? todayYear - 1 : todayYear; // Handle year change Dec->Jan
+      effectiveOpenDate = new Date(Date.UTC(prevYear, prevMonthIndex, 30));
+    }
   }
 
   // --- Calculate next opening date and days until open ---
