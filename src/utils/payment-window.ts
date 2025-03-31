@@ -5,113 +5,167 @@ interface PaymentWindow {
   daysUntilOpen: number;
 }
 
-// Helper function to get WAT date
-const getWATDate = (date: Date = new Date()): Date => {
-  // WAT is UTC+1
-  const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-  return new Date(utcDate.getTime() + (60 * 60 * 1000)); // Add 1 hour for WAT
-};
-
 const getMonthName = (monthIndex: number): string => {
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   return months[monthIndex % 12];
 };
 
 const isLeapYear = (year: number): boolean => {
-  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 };
 
 const getNextMonth = (currentMonth: number): number => {
   return (currentMonth + 1) % 12;
 };
 
-const FEBRUARY = 1; // 0-based month indexing
+const getPreviousMonth = (currentMonth: number): number => {
+  return currentMonth === 0 ? 11 : currentMonth - 1;
+};
 
-export const getNextWindowDate = (currentDate: Date): Date => {
-  const watDate = getWATDate(currentDate);
-  const currentDay = watDate.getDate();
-  const currentMonth = watDate.getMonth();
-  const currentYear = watDate.getFullYear();
+const getLastDayOfMonth = (month: number, year: number): number => {
+  switch (month) {
+    case 1: // February
+      return isLeapYear(year) ? 29 : 28;
+    case 3: // April
+    case 5: // June
+    case 8: // September
+    case 10: // November
+      return 30;
+    default:
+      return 31;
+  }
+};
 
-  // If we're in February
-  if (currentMonth === FEBRUARY) {
-    const lastFebDay = isLeapYear(currentYear) ? 29 : 28;
-    // If we're before the last day of February
-    if (currentDay < lastFebDay) {
-      return new Date(currentYear, FEBRUARY, lastFebDay);
-    }
-    // If we're on or after the last day of February
-    return new Date(currentYear, FEBRUARY + 1, 30);
+const getDayString = (day: number): string => {
+  if (day >= 11 && day <= 13) return `${day}th`;
+  const lastDigit = day % 10;
+  switch (lastDigit) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
   }
-
-  // If we're before the 30th of current month
-  if (currentDay < 30) {
-    return new Date(currentYear, currentMonth, 30);
-  }
-  
-  // If we're at or after the 30th, get next month's date
-  const nextMonth = getNextMonth(currentMonth);
-  const nextYear = nextMonth === 0 ? currentYear + 1 : currentYear;
-  
-  // If next month is February
-  if (nextMonth === FEBRUARY) {
-    return isLeapYear(nextYear) 
-      ? new Date(nextYear, FEBRUARY, 29)
-      : new Date(nextYear, FEBRUARY, 28);
-  }
-  
-  return new Date(nextYear, nextMonth, 30);
 };
 
 export const getPaymentWindowStatus = (): PaymentWindow => {
-  const watDate = getWATDate();
-  const currentDay = watDate.getDate();
-  const currentMonth = watDate.getMonth();
-  const currentYear = watDate.getFullYear();
+  const today = new Date();
+  const currentDay = today.getDate();
+  const currentMonth = today.getMonth(); // 0 = January, 1 = February, etc.
+  const currentYear = today.getFullYear();
 
-  // Get next window date for comparison
-  const nextOpenDate = getNextWindowDate(watDate);
+  const opensNextMonthOn = `🔵 1st of ${getMonthName(
+    getNextMonth(currentMonth)
+  )}`;
+  const closesOn = `🔴 3rd of ${getMonthName(getNextMonth(currentMonth))}`;
 
-  // Determine if window is open
-  const isOpen = 
-    // February special cases
-    (currentMonth === FEBRUARY && (
-      (isLeapYear(currentYear) && currentDay === 29) || 
-      (!isLeapYear(currentYear) && currentDay === 28)
-    )) ||
-    // Regular months
-    (currentMonth !== FEBRUARY && (
-      // Open on 30th
-      currentDay === 30 ||
-      // Or first 3 days of next month
-      (currentDay <= 3 && currentMonth === getNextMonth((nextOpenDate.getMonth() + 11) % 12))
-    ));
+  // === February Logic ===
+  if (currentMonth === 1) {
+    const isLeap = isLeapYear(currentYear);
+    const febLastDay = isLeap ? 29 : 28;
+    const febOpensOn = isLeap ? `🔵 29th of February` : `🔵 1st of March`;
+    const febClosesOn = `🔴 3rd of March`;
 
-  // Calculate days until next window
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const todayMidnight = new Date(currentYear, currentMonth, currentDay).getTime();
-  const nextDateMidnight = new Date(
-    nextOpenDate.getFullYear(),
-    nextOpenDate.getMonth(),
-    nextOpenDate.getDate()
-  ).getTime();
-  
-  const rawDaysUntilOpen = Math.ceil((nextDateMidnight - todayMidnight) / msPerDay);
-  const daysUntilOpen = isOpen ? 0 : Math.max(0, rawDaysUntilOpen);
+    if (isLeap) {
+      // Leap Year February
+      if (currentDay === 29) {
+        // Last day (29th) - OPEN
+        return {
+          isOpen: true,
+          opensOn: febOpensOn,
+          closesOn: febClosesOn,
+          daysUntilOpen: 0,
+        };
+      } else {
+        // Any other day in Feb (Leap) - CLOSED
+        return {
+          isOpen: false,
+          opensOn: febOpensOn,
+          closesOn: febClosesOn,
+          daysUntilOpen: 29 - currentDay,
+        };
+      }
+    } else {
+      // Non-Leap Year February - Always CLOSED in Feb, opens Mar 1st
+      return {
+        isOpen: false,
+        opensOn: febOpensOn, // Which is '1st of March'
+        closesOn: febClosesOn,
+        daysUntilOpen: febLastDay - currentDay + 1, // Days left in Feb + 1 (for Mar 1st)
+      };
+    }
+  }
 
-  // Format the response
-  const opensDay = nextOpenDate.getDate();
-  const opensMonth = nextOpenDate.getMonth();
-  const closesMonth = getNextMonth(opensMonth);
-  const dayString = opensDay === 1 ? '1st' : `${opensDay}th`;
+  // === March Logic (days 1-3) ===
+  // Handles period after February opening
+  if (currentMonth === 2 && currentDay <= 3) {
+    const isPreviousFebLeap = isLeapYear(currentYear);
+    // If previous Feb was leap, it opened Feb 29th. If not, it opened Mar 1st.
+    const marchOpensOn = isPreviousFebLeap
+      ? `🔵 29th of February`
+      : `🔵 1st of March`;
+    return {
+      isOpen: true,
+      opensOn: marchOpensOn,
+      closesOn: `🔴 3rd of March`,
+      daysUntilOpen: 0,
+    };
+  }
 
+  // === Regular Month Logic (Not Feb/Mar 1-3) ===
+  const lastDayOfCurrentMonth = getLastDayOfMonth(currentMonth, currentYear);
+  const opensOnThisMonth = `🔵 30th of ${getMonthName(currentMonth)}`;
+  const closesOnNextMonth = `🔴 3rd of ${getMonthName(
+    getNextMonth(currentMonth)
+  )}`;
+
+  // Check if window is open (30th or 31st OR 1st-3rd of the month)
+  if (currentDay >= 30 || currentDay <= 3) {
+    // Determine the correct 'opensOn' date based on context
+    let effectiveOpensOn = opensOnThisMonth;
+    if (currentDay <= 3) {
+      // If we are in the first 3 days, the window opened last month
+      const prevMonth = getPreviousMonth(currentMonth);
+      const lastDayOfPrevMonth = getLastDayOfMonth(prevMonth, currentYear);
+      // Special case for March opening after Feb
+      if (currentMonth === 2) {
+        effectiveOpensOn = isLeapYear(currentYear)
+          ? `🔵 29th of February`
+          : `🔵 1st of March`;
+      } else {
+        effectiveOpensOn = `🔵 30th of ${getMonthName(prevMonth)}`;
+      }
+    }
+
+    return {
+      isOpen: true,
+      opensOn: effectiveOpensOn,
+      closesOn: closesOnNextMonth,
+      daysUntilOpen: 0,
+    };
+  }
+
+  // Otherwise, the window is closed
   return {
-    isOpen,
-    opensOn: `🔵 ${dayString} of ${getMonthName(opensMonth)}`,
-    closesOn: `🔴 3rd of ${getMonthName(closesMonth)}`,
-    daysUntilOpen
+    isOpen: false,
+    opensOn: opensOnThisMonth,
+    closesOn: closesOnNextMonth,
+    daysUntilOpen: 30 - currentDay, // Days until the 30th
   };
-}; 
+};
