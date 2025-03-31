@@ -35,45 +35,11 @@ const getPreviousMonth = (currentMonth: number): number => {
   return currentMonth === 0 ? 11 : currentMonth - 1;
 };
 
-const getLastDayOfMonth = (month: number, year: number): number => {
-  switch (month) {
-    case 1: // February
-      return isLeapYear(year) ? 29 : 28;
-    case 3: // April
-    case 5: // June
-    case 8: // September
-    case 10: // November
-      return 30;
-    default:
-      return 31;
-  }
-};
-
-const getDayString = (day: number): string => {
-  if (day >= 11 && day <= 13) return `${day}th`;
-  const lastDigit = day % 10;
-  switch (lastDigit) {
-    case 1:
-      return `${day}st`;
-    case 2:
-      return `${day}nd`;
-    case 3:
-      return `${day}rd`;
-    default:
-      return `${day}th`;
-  }
-};
-
 export const getPaymentWindowStatus = (): PaymentWindow => {
   const today = new Date();
   const currentDay = today.getDate();
   const currentMonth = today.getMonth(); // 0 = January, 1 = February, etc.
   const currentYear = today.getFullYear();
-
-  const opensNextMonthOn = `🔵 1st of ${getMonthName(
-    getNextMonth(currentMonth)
-  )}`;
-  const closesOn = `🔴 3rd of ${getMonthName(getNextMonth(currentMonth))}`;
 
   // === February Logic ===
   if (currentMonth === 1) {
@@ -129,7 +95,6 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
   }
 
   // === Regular Month Logic (Not Feb/Mar 1-3) ===
-  const lastDayOfCurrentMonth = getLastDayOfMonth(currentMonth, currentYear);
   const opensOnThisMonth = `🔵 30th of ${getMonthName(currentMonth)}`;
   const closesOnNextMonth = `🔴 3rd of ${getMonthName(
     getNextMonth(currentMonth)
@@ -142,7 +107,6 @@ export const getPaymentWindowStatus = (): PaymentWindow => {
     if (currentDay <= 3) {
       // If we are in the first 3 days, the window opened last month
       const prevMonth = getPreviousMonth(currentMonth);
-      const lastDayOfPrevMonth = getLastDayOfMonth(prevMonth, currentYear);
       // Special case for March opening after Feb
       if (currentMonth === 2) {
         effectiveOpensOn = isLeapYear(currentYear)
