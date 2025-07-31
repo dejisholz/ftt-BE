@@ -150,7 +150,7 @@ export async function removeNonAdminUsers(
     channelId: string = channelID
   ): Promise<void> {
 
-    if (isCurrentMonthAndYear(5, 2025)) {
+    if (isCurrentMonthAndYear(6, 2025)) {
       return;
     }
 
